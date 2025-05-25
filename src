@@ -1,0 +1,160 @@
+
+
+// Sensor pins
+const int trigPin1 = 6;  // Front sensor
+const int echoPin1 = 7;
+const int trigPin2 = 10; // Left sensor
+const int echoPin2 = 11;
+const int trigPin3 = 8;  // Right sensor
+const int echoPin3 = 9;
+
+// Motor control pins
+const int in1 = 2;
+const int in2 = 3;
+const int in3 = 4;
+const int in4 = 5;
+
+// Distance threshold (in cm)
+#define OBSTACLE_DISTANCE 7
+
+void setup() {
+  // Initialize sensor pins
+  pinMode(trigPin1, OUTPUT);
+  pinMode(echoPin1, INPUT);
+  pinMode(trigPin2, OUTPUT);
+  pinMode(echoPin2, INPUT);
+  pinMode(trigPin3, OUTPUT);
+  pinMode(echoPin3, INPUT);
+  
+  // Initialize motor pins
+  pinMode(in1, OUTPUT);
+  pinMode(in2, OUTPUT);
+  pinMode(in3, OUTPUT);
+  pinMode(in4, OUTPUT);
+
+  // Ensure motors are stopped initially
+  stop();
+}
+
+void loop() {
+  // Read sensor values
+  int frontDist = FrontSensor();
+  int rightDist = RightSensor();
+  int leftDist = LeftSensor();
+
+  // Decision making based on sensor readings
+  if (frontDist > OBSTACLE_DISTANCE && rightDist > OBSTACLE_DISTANCE && leftDist > OBSTACLE_DISTANCE) {
+    forward();  // All paths clear - move forward
+  }
+  else if (frontDist < OBSTACLE_DISTANCE && rightDist < OBSTACLE_DISTANCE && leftDist < OBSTACLE_DISTANCE) {
+    // Dead end - reverse and choose direction
+    reverse();
+    delay(500);
+    stop();
+    if(leftDist > rightDist) {
+      turn_left();
+    } else {
+      turn_right();
+    }
+  }
+  else if (frontDist < OBSTACLE_DISTANCE && rightDist < OBSTACLE_DISTANCE && leftDist > OBSTACLE_DISTANCE) {
+    // Obstacle on front and right - turn left
+    turn_left();
+  }
+  else if (frontDist < OBSTACLE_DISTANCE && rightDist > OBSTACLE_DISTANCE && leftDist < OBSTACLE_DISTANCE) {
+    // Obstacle on front and left - turn right
+    turn_right();
+  }
+  else if (frontDist < OBSTACLE_DISTANCE && rightDist > OBSTACLE_DISTANCE && leftDist > OBSTACLE_DISTANCE) {
+    // Obstacle only in front - turn left then move
+    turn_left();
+    delay(500);
+    forward();
+  }
+  else if (frontDist > OBSTACLE_DISTANCE && rightDist > OBSTACLE_DISTANCE && leftDist < OBSTACLE_DISTANCE) {
+    // Obstacle on left - turn right then move
+    turn_right();
+    delay(500);
+    forward();
+  }
+  else if (frontDist > OBSTACLE_DISTANCE && rightDist < OBSTACLE_DISTANCE && leftDist > OBSTACLE_DISTANCE) {
+    // Obstacle on right - turn left then move
+    turn_left();
+    delay(500);
+    forward();
+  }
+  else {
+    // Default case - move forward
+    forward();
+  }
+}
+
+// Motor control functions
+void forward() {
+  digitalWrite(in1, HIGH);
+  digitalWrite(in2, LOW);
+  digitalWrite(in3, HIGH);
+  digitalWrite(in4, LOW);
+}
+
+void turn_left() {
+  digitalWrite(in1, HIGH);
+  digitalWrite(in2, LOW);
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, HIGH);
+}
+
+void turn_right() {
+  digitalWrite(in1, LOW);
+  digitalWrite(in2, HIGH);
+  digitalWrite(in3, HIGH);
+  digitalWrite(in4, LOW);
+}
+
+void reverse() {
+  digitalWrite(in1, LOW);
+  digitalWrite(in2, HIGH);
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, HIGH);
+}
+
+void stop() {
+  digitalWrite(in1, LOW);
+  digitalWrite(in2, LOW);
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, LOW);
+}
+
+// Sensor reading functions
+long FrontSensor() {
+  long duration;
+  digitalWrite(trigPin1, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin1, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin1, LOW);
+  duration = pulseIn(echoPin1, HIGH);
+  return (duration / 58); // Convert to cm
+}
+
+long RightSensor() {
+  long duration;
+  digitalWrite(trigPin2, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin2, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin2, LOW);
+  duration = pulseIn(echoPin2, HIGH);
+  return (duration / 58); // Convert to cm
+}
+
+long LeftSensor() {
+  long duration;
+  digitalWrite(trigPin3, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin3, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin3, LOW);
+  duration = pulseIn(echoPin3, HIGH);
+  return (duration / 58); // Convert to cm
+}
